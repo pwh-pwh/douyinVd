@@ -66,10 +66,27 @@ async function getVideoInfo(url) {
   } else {
     img_list = await parseImgList(body);
   }
+  if (!video_url && img_list.length === 0) {
+    throw new Error("No video or image content found in the response.");
+  }
   const auMatch = body.match(regex);
   const ctMatch = body.match(ctRegex);
   const descMatch = body.match(descRegex);
   const statsMatch = body.match(statsRegex);
+  const douyinVideoInfo = {
+    aweme_id: null,
+    comment_count: null,
+    digg_count: null,
+    share_count: null,
+    collect_count: null,
+    nickname: null,
+    signature: null,
+    desc: null,
+    create_time: null,
+    video_url,
+    type,
+    image_url_list: img_list
+  };
   if (statsMatch) {
     const innerContent = statsMatch[0];
     const awemeIdMatch = innerContent.match(/"aweme_id"\s*:\s*"([^"]+)"/);
@@ -78,36 +95,25 @@ async function getVideoInfo(url) {
     const playCountMatch = innerContent.match(/"play_count"\s*:\s*(\d+)/);
     const shareCountMatch = innerContent.match(/"share_count"\s*:\s*(\d+)/);
     const collectCountMatch = innerContent.match(/"collect_count"\s*:\s*(\d+)/);
-    const douyinVideoInfo = {
-      aweme_id: awemeIdMatch ? awemeIdMatch[1] : null,
-      comment_count: commentCountMatch ? parseInt(commentCountMatch[1]) : null,
-      digg_count: diggCountMatch ? parseInt(diggCountMatch[1]) : null,
-      share_count: shareCountMatch ? parseInt(shareCountMatch[1]) : null,
-      collect_count: collectCountMatch ? parseInt(collectCountMatch[1]) : null,
-      nickname: null,
-      signature: null,
-      desc: null,
-      create_time: null,
-      video_url,
-      type,
-      image_url_list: img_list
-    };
-    if (auMatch) {
-      douyinVideoInfo.nickname = auMatch[1];
-      douyinVideoInfo.signature = auMatch[2];
-    }
-    if (ctMatch) {
-      const date = new Date(parseInt(ctMatch[1]) * 1e3);
-      douyinVideoInfo.create_time = formatDate(date);
-    }
-    if (descMatch) {
-      douyinVideoInfo.desc = descMatch[1];
-    }
-    console.log(douyinVideoInfo);
-    return douyinVideoInfo;
-  } else {
-    throw new Error("No stats found in the response.");
+    douyinVideoInfo.aweme_id = awemeIdMatch ? awemeIdMatch[1] : null;
+    douyinVideoInfo.comment_count = commentCountMatch ? parseInt(commentCountMatch[1]) : null;
+    douyinVideoInfo.digg_count = diggCountMatch ? parseInt(diggCountMatch[1]) : null;
+    douyinVideoInfo.share_count = shareCountMatch ? parseInt(shareCountMatch[1]) : null;
+    douyinVideoInfo.collect_count = collectCountMatch ? parseInt(collectCountMatch[1]) : null;
   }
+  if (auMatch) {
+    douyinVideoInfo.nickname = auMatch[1];
+    douyinVideoInfo.signature = auMatch[2];
+  }
+  if (ctMatch) {
+    const date = new Date(parseInt(ctMatch[1]) * 1e3);
+    douyinVideoInfo.create_time = formatDate(date);
+  }
+  if (descMatch) {
+    douyinVideoInfo.desc = descMatch[1];
+  }
+  console.log(douyinVideoInfo);
+  return douyinVideoInfo;
 }
 async function getVideoId(url) {
   const resp = await doGet(url);
